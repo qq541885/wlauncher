@@ -28,7 +28,7 @@ jobs:
           PM="$(command -v pacman || command -v dkp-pacman || true)"
           if [ -z "$PM" ]; then echo "::error::pacman not found"; exit 1; fi
           "$PM" -Sy --noconfirm --needed 2>&1 | tail -3 || echo "::warning::sync failed, using image contents"
-          for pkg in switch-sdl2 switch-sdl2_ttf switch-sdl2_image switch-libpng switch-libjpeg-turbo switch-freetype switch-zlib switch-mesa switch-glad switch-libdrm_nouveau switch-libconfig switch-bzip2 switch-brotli; do
+          for pkg in switch-sdl2 switch-sdl2_ttf switch-sdl2_image switch-libpng switch-libjpeg-turbo switch-freetype switch-zlib switch-mesa switch-glad switch-libdrm_nouveau switch-libconfig; do
             if "$PM" -Q "$pkg" >/dev/null 2>&1; then
               echo "have $pkg"
             else
@@ -37,10 +37,16 @@ jobs:
           done
           echo "--- verify ---"
           aarch64-none-elf-gcc --version | head -1
-          for lib in libSDL2.a libSDL2_ttf.a libfreetype.a libpng.a libz.a libEGL.a libGLESv2.a libglapi.a libdrm_nouveau.a libbz2.a libbrotlidec.a; do
+          for lib in libSDL2.a libSDL2_ttf.a libfreetype.a libpng.a libz.a libEGL.a libGLESv2.a libglapi.a libdrm_nouveau.a; do
             f=$(find "$DEVKITPRO" -name "$lib" 2>/dev/null | head -1)
             if [ -n "$f" ]; then echo "OK   $lib"; else echo "MISS $lib"; fi
           done
+
+      - name: PORTLIBS INVENTORY
+        run: |
+          echo "=== $DEVKITPRO/portlibs/switch/lib ==="
+          ls "$DEVKITPRO/portlibs/switch/lib"/*.a 2>/dev/null | xargs -n1 basename | sort | tr '\n' ' ' || true
+          echo
 
       - name: Build
         run: |
@@ -66,5 +72,6 @@ jobs:
             wlauncher.elf
             wlauncher.nacp
           if-no-files-found: error
+
 
 

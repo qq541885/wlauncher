@@ -1,4 +1,4 @@
-﻿#---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
 ifeq ($(strip $(DEVKITPRO)),)
@@ -31,13 +31,14 @@ CXXFLAGS	:= $(CFLAGS)
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-# SDL2 鎻愪緵绐楀彛/杈撳叆锛孲DL2_ttf 娓叉煋绯荤粺瀛椾綋閲岀殑涓枃
-# SDL2 的 switch 移植带着 EGL 后端（SDL_egl.c），必须一起链 libEGL/GLESv2，
-# 另外 libdrm_nouveau 提供底层 surface 支持。缺任何一个都会 undefined reference。
-# 顺序要紧：SDL2_ttf 依赖 freetype，freetype 依赖 png/z/bz2/brotli，
-# SDL2 又依赖 EGL/GLESv2/glapi/drm_nouveau，全部按依赖倒序排。
-LIBS	:= -lSDL2_ttf -lfreetype -lpng -lz -lbz2 -lbrotlidec -lbrotlicommon \
+#---------------------------------------------------------------------------------
+# Link order matters. SDL2_ttf needs freetype, freetype needs png/z; SDL2's
+# Switch port carries an EGL backend (SDL_egl.c) so it also needs
+# EGL/GLESv2/glapi plus libdrm_nouveau for the underlying surface.
+# brotli has no devkitPro package and the static freetype does not need it.
+LIBS	:= -lSDL2_ttf -lfreetype -lpng -lz \
 		   -lSDL2 -lEGL -lGLESv2 -lglapi -ldrm_nouveau -lnx -lm
+
 #---------------------------------------------------------------------------------
 LIBDIRS	:= $(PORTLIBS) $(LIBNX)
 
@@ -140,5 +141,3 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 #---------------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------------
-
-
