@@ -36,7 +36,7 @@ LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*
 # Switch port carries an EGL backend (SDL_egl.c) so it also needs
 # EGL/GLESv2/glapi plus libdrm_nouveau for the underlying surface.
 # brotli has no devkitPro package and the static freetype does not need it.
-LIBS	:= -lSDL2_ttf -lfreetype -lharfbuzz -lgraphite2 -lpng -lz \
+LIBS	:= -lSDL2_ttf -lfreetype -lharfbuzz -lpng -lz \
 		   -lSDL2 -lEGL -lGLESv2 -lglapi -ldrm_nouveau -lnx -lm
 
 #---------------------------------------------------------------------------------
@@ -141,4 +141,5 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 #---------------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------------
+
 
