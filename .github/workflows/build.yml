@@ -1,0 +1,68 @@
+name: build-wlauncher
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+      options: --user root
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEVKITPRO: /opt/devkitpro
+      DEVKITA64: /opt/devkitpro/devkitA64
+      PATH: /opt/devkitpro/devkitA64/bin:/opt/devkitpro/tools/bin:/opt/devkitpro/pacman/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SDL2 + SDL2_ttf
+        run: |
+          set -uo pipefail
+          PM="$(command -v pacman || command -v dkp-pacman || true)"
+          if [ -z "$PM" ]; then echo "::error::pacman not found"; exit 1; fi
+          "$PM" -Sy --noconfirm --needed 2>&1 | tail -3 || echo "::warning::sync failed, using image contents"
+          for pkg in switch-sdl2 switch-sdl2_ttf switch-sdl2_image switch-libpng switch-libjpeg-turbo switch-freetype switch-zlib; do
+            if "$PM" -Q "$pkg" >/dev/null 2>&1; then
+              echo "have $pkg"
+            else
+              "$PM" -S --noconfirm --needed "$pkg" 2>&1 | tail -2 || echo "::warning::install failed: $pkg"
+            fi
+          done
+          echo "--- verify ---"
+          aarch64-none-elf-gcc --version | head -1
+          for lib in libSDL2.a libSDL2_ttf.a libfreetype.a libpng.a libz.a; do
+            f=$(find "$DEVKITPRO" -name "$lib" 2>/dev/null | head -1)
+            if [ -n "$f" ]; then echo "OK   $lib"; else echo "MISS $lib"; fi
+          done
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          make -j"$(nproc)" 2>&1 | tee build.log
+          ls -la *.nro *.elf *.nacp 2>/dev/null || true
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - name: Upload NRO
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wlauncher-nro
+          path: |
+            wlauncher.nro
+            wlauncher.elf
+            wlauncher.nacp
+          if-no-files-found: error
